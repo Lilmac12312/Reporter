@@ -12,7 +12,6 @@ public class Report {
 
     private Reporter reporter;
     private MySQLCon sql;
-    private SQL sqlTable;
     private String sender, reported, reason;
     private int id, x, y, z;
     private boolean resolved;
@@ -78,9 +77,9 @@ public class Report {
         return z;
     }
 
-    public void sendReport() {
+    public void insertReport() {
         try {
-            PreparedStatement ps = sql.getConn().prepareStatement(sqlTable.sendReport, PreparedStatement.RETURN_GENERATED_KEYS);
+            PreparedStatement ps = sql.getConn().prepareStatement("INSERT INTO `" + reporter.tableName + "` (`sender`, `reported`, `x`, `y`, `z`, `reason`, `resolved`) VALUES (?, ?, ?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
             ps.setString(1, sender);
             ps.setString(2, reported);
             ps.setInt(3, x);
@@ -100,10 +99,11 @@ public class Report {
 
     public void updateStatus() {
         try {
-            PreparedStatement ps = sql.getConn().prepareStatement(sqlTable.updateStatus);
+            PreparedStatement ps = sql.getConn().prepareStatement("UPDATE `" + reporter.tableName +"` SET `resolved`=? WHERE `id`=?");
             ps.setBoolean(1, resolved);
             ps.setInt(2, id);
             ps.executeUpdate();
+            reporter.log(1, id + ":" + resolved);
         } catch (SQLException ex) {
             reporter.log(2, "Failed to update report! " + ex.getMessage());
         }

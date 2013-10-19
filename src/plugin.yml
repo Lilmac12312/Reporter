@@ -1,5 +1,28 @@
 name: Reporter
-version: 0.1
+version: 0.2
 author: rfsantos1996
 main: com.jabyftw.reporter.Reporter
 description: Report griefers!
+commands:
+   report:
+     description: Report player for a reason
+     permission: reporter.report
+     usage: Use /command [player] [reason]
+   reportlist:
+     description: List all open reports
+     permission: reporter.listreports
+     usage: Use /command
+   reportstatus:
+     description: Set the report closed or opened
+     permission: reporter.setreportstatus
+     usage: Use /command [report id] [1 - true, 0 - false]
+permissions:
+   reporter.report:
+     description: Gives access to Reporter command
+     default: true
+   reporter.reportlist:
+     description: Gives access to Reporter command
+     default: op
+   reporter.setreportstatus:
+     description: Gives access to Reporter command
+     default: op

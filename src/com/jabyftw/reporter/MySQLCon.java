@@ -9,13 +9,14 @@ public class MySQLCon {
     String user;
     String pass;
     String url;
-    public Connection conn;
+    public Connection conn = null;
 
     public MySQLCon(Reporter plugin, String username, String password, String url) {
         this.reporter = plugin;
         this.user = username;
         this.pass = password;
         this.url = url;
+        reporter.log(0, "URL: " + url);
     }
 
     public Connection getConn() {

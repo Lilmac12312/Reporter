@@ -20,19 +20,25 @@ public class ReportListExecutor implements CommandExecutor {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) { //TODO: reporter.sublist
         if (sender.hasPermission("reporter.listreports")) {
-            sender.sendMessage("ID | Sender | Reported | X, Y, Z | Reason");
             int i = 0;
-            for (Report r : reporter.reports) {
-                while (i < 9) { // max number of report lines
-                    if (!r.isResolved()) {
-                        i++;
-                        sender.sendMessage(r.getId() + " | " + r.getSender() + " | " + r.getReported() + " | " + r.getX() + ", " + r.getY() + ", " + r.getZ() + " | " + r.getReason());
+            if (reporter.reports.size() > 0) {
+                sender.sendMessage("ID | Sender | Reported | X, Y, Z | Reason");
+                while (i < 10) {
+                    for (Report r : reporter.reports) {
+                        if (!r.isResolved()) {
+                            i++;
+                            sender.sendMessage(r.getId() + " | " + r.getSender() + " | " + r.getReported() + " | " + r.getX() + ", " + r.getY() + ", " + r.getZ() + " | " + r.getReason());
+                        }
                     }
+                    return true; // will stop showing repeated values
                 }
+                return true;
+            } else {
+                sender.sendMessage("No reports found");
+                return true;
             }
-            return true;
         } else {
             sender.sendMessage("You dont have permission to do that!");
             return false;

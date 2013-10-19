@@ -38,12 +38,10 @@ public class ReportExecutor implements CommandExecutor {
                         return true;
                     } else {
                         Location loc = p.getLocation();
-                        String reason = combineSplit(2, args);
-                        Report r = new Report(reporter, sql, sender.getName().toLowerCase(), args[1].toLowerCase(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), reason, false);
-                        r.sendReport();
-                        if(!reporter.reloading) { // if its reloading, the report is already sent and will appear on the next list
-                            reporter.reports.add(r);
-                        }
+                        String reason = combineSplit(1, args);
+                        Report r = new Report(reporter, sql, sender.getName().toLowerCase(), args[0].toLowerCase(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), reason, false);
+                        r.insertReport();
+                        reporter.reports.add(r);
                         alreadyReport.add(p);
                         sender.sendMessage("Report sent! Our mods will take care of your issue!");
                         reporter.getServer().getScheduler().runTaskLater(reporter, new RemoveFromListTask(this, p), reporter.reportDelay * 20 * 60); // time in minutes * 20 * 60 = time in minutes in ticks

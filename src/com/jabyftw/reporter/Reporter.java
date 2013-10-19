@@ -3,9 +3,11 @@ package com.jabyftw.reporter;
 import com.jabyftw.reporter.commands.ReportStatusExecutor;
 import com.jabyftw.reporter.commands.ReportListExecutor;
 import com.jabyftw.reporter.commands.ReportExecutor;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -14,14 +16,12 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class Reporter extends JavaPlugin {
 
     MySQLCon sql;
-    SQL sqlTable;
 
     private String username, password, url;
     private boolean debugEnabled;
     public String tableName;
-    public int rowLimit, reportDelay;
-    public List<Report> reports;
-    public boolean reloading;
+    public int reportDelay;
+    public List<Report> reports = new ArrayList<Report>();
 
     @Override
     public void onEnable() {
@@ -30,6 +30,7 @@ public class Reporter extends JavaPlugin {
         sql = new MySQLCon(this, username, password, url);
         createTable();
         loadReports();
+        log(0, "Loaded " + reports.size() + " reports.");
 
         getCommand("report").setExecutor(new ReportExecutor(this, sql));
         getCommand("reportlist").setExecutor(new ReportListExecutor(this));
@@ -45,22 +46,20 @@ public class Reporter extends JavaPlugin {
         FileConfiguration config = getConfig();
         config.addDefault("MySQL.username", "root");
         config.addDefault("MySQL.password", "123");
-        config.addDefault("MySQL.reportLimitOnMySQLRequest", "30");
+        config.addDefault("MySQL.table", "reporter");
         config.addDefault("MySQL.url.host", "localhost");
         config.addDefault("MySQL.url.port", 3306);
         config.addDefault("MySQL.url.database", "minecraft");
-        config.addDefault("MySQL.table", "reporter");
         config.addDefault("Config.reportDelayInMinutes", 30);
-        config.addDefault("Config.debug", "false");
+        config.addDefault("Config.debug", false);
         config.options().copyDefaults(true);
-        saveDefaultConfig();
+        saveConfig();
         reloadConfig();
         url = "jdbc:mysql://" + config.getString("MySQL.url.host") + ":" + config.getInt("MySQL.url.port") + "/" + config.getString("MySQL.url.database");
         username = config.getString("MySQL.username");
         password = config.getString("MySQL.password");
         debugEnabled = config.getBoolean("Config.debug");
         tableName = config.getString("MySQL.table");
-        rowLimit = config.getInt("MySQL.reportLimitOnMySQLRequest");
         reportDelay = config.getInt("Config.reportDelayInMinutes");
     }
 
@@ -70,28 +69,33 @@ public class Reporter extends JavaPlugin {
      2 - warning
      */
     public void log(int i, String msg) {
-        if (i == 0) {
-            getLogger().log(Level.INFO, msg);
-        } else if (i == 1 && debugEnabled) {
-            getLogger().log(Level.OFF, "DEBUG: " + msg);
-        } else if (i == 2) {
-            getLogger().log(Level.WARNING, msg);
+        switch (i) {
+            case 0:
+                getLogger().log(Level.INFO, msg);
+                break;
+            case 1:
+                getLogger().log(Level.OFF, "DEBUG: " + msg);
+                break;
+            case 2:
+                getLogger().log(Level.WARNING, msg);
+                break;
         }
     }
 
     private void createTable() {
         try {
             log(0, "Creating MySQL Table if not exists...");
-            sql.getConn().createStatement().execute(sqlTable.createTable);
+            Statement s = sql.getConn().createStatement();
+            s.execute("CREATE TABLE IF NOT EXISTS `" + tableName + "` (`id` int(11) NOT NULL AUTO_INCREMENT, `sender` varchar(32) NOT NULL, `reported` varchar(32) NOT NULL, `x` int(11) NOT NULL, `y` int(11) NOT NULL, `z` int(11) NOT NULL, `reason` text NOT NULL, `resolved` tinyint(1) NOT NULL DEFAULT '0', PRIMARY KEY (`id`)) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3;");
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            log(2, "Cant create MySQL Table: " + ex.getMessage());
         }
     }
 
     private void loadReports() {
         try {
             Statement s = sql.getConn().createStatement();
-            ResultSet rs = s.executeQuery(sqlTable.loadReport); // will only load non-resolved issues
+            ResultSet rs = s.executeQuery("SELECT `id`, `sender`, `reported`, `x`, `y`, `z`, `reason` FROM `" + tableName + "` WHERE `resolved`=FALSE LIMIT 30;"); // will only load non-resolved issues
             while (rs.next()) {
                 int id = rs.getInt("id");
                 String sender = rs.getString("sender");
@@ -100,19 +104,16 @@ public class Reporter extends JavaPlugin {
                 int y = rs.getInt("y");
                 int z = rs.getInt("z");
                 String reason = rs.getString("reason");
+                log(1, "id: " + id);
                 reports.add(new Report(this, sql, id, sender, reported, x, y, z, reason, false));
             }
-            log(0, "Report list loaded. Total unclosed reports: " + reports.size());
-            log(1, "Report list: " + reports.toString());
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            log(2, "Cant load Reporter's table: " + ex.getMessage());
         }
     }
 
-    private void reloadReports() { //TODO: dont add more reports while reloading
-        reloading = true;
+    public void reloadReports() {
         reports.clear();
         loadReports();
-        reloading = false;
     }
 }
