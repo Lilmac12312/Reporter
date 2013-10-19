@@ -4,7 +4,9 @@ import com.jabyftw.reporter.MySQLCon;
 import com.jabyftw.reporter.Report;
 import com.jabyftw.reporter.Reporter;
 import com.jabyftw.reporter.tasks.RemoveFromListTask;
+import java.util.ArrayList;
 import java.util.List;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -20,21 +22,29 @@ public class ReportExecutor implements CommandExecutor {
     private Reporter reporter;
     private MySQLCon sql;
     private String Formatting;
-    public List<Player> alreadyReport;
+    public List<Player> alreadyReport = new ArrayList<Player>();
 
     public ReportExecutor(Reporter plugin, MySQLCon sql) {
         this.reporter = plugin;
         this.sql = sql;
     }
+    
+    /*
+    TODO: make ALL commands like:
+    /report tp (id)
+    /report set (id) boolean
+    /report list
+    /report (name) (reason)
+    */
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) { //TODO: color
+    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (sender instanceof Player) {
             if (sender.hasPermission("reporter.report")) {
-                if (args.length > 3) {
+                if (args.length >= 2) {
                     Player p = (Player) sender;
                     if (alreadyReport.contains(p)) {
-                        sender.sendMessage("You already reported in the past " + reporter.reportDelay + " minutes!");
+                        sender.sendMessage(ChatColor.RED + "You already reported in the past " + ChatColor.DARK_RED + reporter.reportDelay + " minutes!");
                         return true;
                     } else {
                         Location loc = p.getLocation();
@@ -43,7 +53,7 @@ public class ReportExecutor implements CommandExecutor {
                         r.insertReport();
                         reporter.reports.add(r);
                         alreadyReport.add(p);
-                        sender.sendMessage("Report sent! Our mods will take care of your issue!");
+                        sender.sendMessage(ChatColor.AQUA + "Report sent! " + ChatColor.BLUE + "Our mods will take care of your issue!");
                         reporter.getServer().getScheduler().runTaskLater(reporter, new RemoveFromListTask(this, p), reporter.reportDelay * 20 * 60); // time in minutes * 20 * 60 = time in minutes in ticks
                         return true;
                     }
@@ -54,15 +64,14 @@ public class ReportExecutor implements CommandExecutor {
                      args[2] = reason
                      3 args minimum
                      */
-                    sender.sendMessage("Use: /report (name) (reason)");
-                    return true;
+                    return false;
                 }
             } else {
-                sender.sendMessage("You dont have permission!");
+                sender.sendMessage(ChatColor.DARK_RED + "You dont have permission!");
                 return true;
             }
         } else {
-            sender.sendMessage("You are not a player!");
+            sender.sendMessage(ChatColor.RED + "You are not a player!");
             return true;
         }
     }

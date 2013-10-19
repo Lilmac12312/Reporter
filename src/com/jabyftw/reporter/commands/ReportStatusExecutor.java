@@ -13,6 +13,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -51,14 +52,14 @@ public class ReportStatusExecutor implements CommandExecutor {
                     r.updateStatus();
                     reporter.reloadReports();
                 }
-                sender.sendMessage("Done!");
+                sender.sendMessage(ChatColor.AQUA + "Done!");
                 return true;
             } catch (SQLException ex) {
                 ex.printStackTrace();
             }
             return false;
         } else {
-            sender.sendMessage("You dont have permission for that!");
+            sender.sendMessage(ChatColor.RED + "You dont have permission for that!");
             return true;
         }
     }

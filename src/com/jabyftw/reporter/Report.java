@@ -79,16 +79,9 @@ public class Report {
 
     public void insertReport() {
         try {
-            PreparedStatement ps = sql.getConn().prepareStatement("INSERT INTO `" + reporter.tableName + "` (`sender`, `reported`, `x`, `y`, `z`, `reason`, `resolved`) VALUES (?, ?, ?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
-            ps.setString(1, sender);
-            ps.setString(2, reported);
-            ps.setInt(3, x);
-            ps.setInt(4, y);
-            ps.setInt(5, z);
-            ps.setString(6, reason);
-            ps.execute();
-
-            ResultSet rs = ps.getGeneratedKeys();
+            Statement s = sql.getConn().createStatement();
+            s.execute("INSERT INTO `" + reporter.tableName + "` (`sender`, `reported`, `x`, `y`, `z`, `reason`, `resolved`) VALUES ('"+sender+"', '"+reported+"', '"+x+"', '"+y+"', '"+z+"', '"+reason+"', false);", Statement.RETURN_GENERATED_KEYS);
+            ResultSet rs = s.getGeneratedKeys();
             while (rs.next()) {
                 id = rs.getInt(1);
             }
