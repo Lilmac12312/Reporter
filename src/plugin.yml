@@ -1,0 +1,5 @@
+name: Reporter
+version: 0.1
+author: rfsantos1996
+main: com.jabyftw.reporter.Reporter
+description: Report griefers!
