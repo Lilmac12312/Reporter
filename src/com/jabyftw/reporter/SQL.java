@@ -20,11 +20,13 @@ public class SQL {
             + "  `y` int(11) NOT NULL,"
             + "  `z` int(11) NOT NULL,"
             + "  `reason` text NOT NULL,"
-            + //"  `date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP," +
-            "  PRIMARY KEY (`id`)"
-            + ") ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;";
+            + "  `resolved` tinyint(1) NOT NULL DEFAULT '0',"
+            + "  PRIMARY KEY (`id`)"
+            + ") ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3 ;";
 
-    public String loadReport = "SELECT `id`, `sender`, `reported`, `x`, `y`, `z`, `reason` FROM `" + reporter.tableName + "` LIMIT " + reporter.rowLimit + ";";
-    
-    public String sendReport = "INSERT INTO `minecraft`.`" + reporter.tableName + "` (`sender`, `reported`, `x`, `y`, `z`, `reason`) VALUES (?, ?, ?, ?, ?, ?);";
+    public String loadReport = "SELECT `id`, `sender`, `reported`, `x`, `y`, `z`, `reason` FROM `" + reporter.tableName + "` WHERE `resolved`=0 LIMIT " + reporter.rowLimit + ";";
+
+    public String sendReport = "INSERT INTO `" + reporter.tableName + "` (`sender`, `reported`, `x`, `y`, `z`, `reason`, `resolved`) VALUES (?, ?, ?, ?, ?, ?, ?);";
+
+    public String updateStatus = "UPDATE `reporter` SET `resolved`=? WHERE `id`=?";
 }

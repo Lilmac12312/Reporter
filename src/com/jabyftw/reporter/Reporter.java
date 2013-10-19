@@ -1,5 +1,7 @@
 package com.jabyftw.reporter;
 
+import com.jabyftw.reporter.commands.ReportStatusExecutor;
+import com.jabyftw.reporter.commands.ReportListExecutor;
 import com.jabyftw.reporter.commands.ReportExecutor;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -17,8 +19,9 @@ public class Reporter extends JavaPlugin {
     private String username, password, url;
     private boolean debugEnabled;
     public String tableName;
-    public int rowLimit;
+    public int rowLimit, reportDelay;
     public List<Report> reports;
+    public boolean reloading;
 
     @Override
     public void onEnable() {
@@ -27,8 +30,10 @@ public class Reporter extends JavaPlugin {
         sql = new MySQLCon(this, username, password, url);
         createTable();
         loadReports();
-        
+
         getCommand("report").setExecutor(new ReportExecutor(this, sql));
+        getCommand("reportlist").setExecutor(new ReportListExecutor(this));
+        getCommand("reportstatus").setExecutor(new ReportStatusExecutor(this, sql));
     }
 
     @Override
@@ -45,6 +50,7 @@ public class Reporter extends JavaPlugin {
         config.addDefault("MySQL.url.port", 3306);
         config.addDefault("MySQL.url.database", "minecraft");
         config.addDefault("MySQL.table", "reporter");
+        config.addDefault("Config.reportDelayInMinutes", 30);
         config.addDefault("Config.debug", "false");
         config.options().copyDefaults(true);
         saveDefaultConfig();
@@ -55,6 +61,7 @@ public class Reporter extends JavaPlugin {
         debugEnabled = config.getBoolean("Config.debug");
         tableName = config.getString("MySQL.table");
         rowLimit = config.getInt("MySQL.reportLimitOnMySQLRequest");
+        reportDelay = config.getInt("Config.reportDelayInMinutes");
     }
 
     /*
@@ -84,7 +91,7 @@ public class Reporter extends JavaPlugin {
     private void loadReports() {
         try {
             Statement s = sql.getConn().createStatement();
-            ResultSet rs = s.executeQuery(sqlTable.loadReport);
+            ResultSet rs = s.executeQuery(sqlTable.loadReport); // will only load non-resolved issues
             while (rs.next()) {
                 int id = rs.getInt("id");
                 String sender = rs.getString("sender");
@@ -93,12 +100,19 @@ public class Reporter extends JavaPlugin {
                 int y = rs.getInt("y");
                 int z = rs.getInt("z");
                 String reason = rs.getString("reason");
-                reports.add(new Report(this, sql, id, sender, reported, x, y, z, reason));
+                reports.add(new Report(this, sql, id, sender, reported, x, y, z, reason, false));
             }
-            log(0, "Report list loaded.");
+            log(0, "Report list loaded. Total unclosed reports: " + reports.size());
             log(1, "Report list: " + reports.toString());
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
+    }
+
+    private void reloadReports() { //TODO: dont add more reports while reloading
+        reloading = true;
+        reports.clear();
+        loadReports();
+        reloading = false;
     }
 }
