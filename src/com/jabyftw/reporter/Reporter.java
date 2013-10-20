@@ -82,8 +82,8 @@ public class Reporter extends JavaPlugin {
     private void createTable() {
         try {
             log(0, "Creating MySQL Table if not exists...");
-            Statement s = sql.getConn().createStatement(); //TODO: result
-            s.execute("CREATE TABLE IF NOT EXISTS `" + tableName + "` (`id` int(11) NOT NULL AUTO_INCREMENT, `sender` varchar(32) NOT NULL, `reported` varchar(32) NOT NULL, `worldname` varchar(56) NOT NULL, `x` int(11) NOT NULL DEFAULT '0', `y` int(11) NOT NULL DEFAULT '0', `z` int(11) NOT NULL DEFAULT '0', `reason` text NOT NULL,  `resolved` tinyint(1) NOT NULL DEFAULT '0', PRIMARY KEY (`id`)) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=5;");
+            Statement s = sql.getConn().createStatement();
+            s.execute("CREATE TABLE IF NOT EXISTS `" + tableName + "` ( `id` int(11) NOT NULL AUTO_INCREMENT, `sender` varchar(32) NOT NULL, `reported` varchar(32) NOT NULL, `worldname` varchar(56) NOT NULL, `x` int(11) NOT NULL DEFAULT '0', `y` int(11) NOT NULL DEFAULT '0', `z` int(11) NOT NULL DEFAULT '0', `reason` text NOT NULL, `resolved` tinyint(1) NOT NULL DEFAULT '0', `result` text, PRIMARY KEY (`id`)) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=5;");
         } catch (SQLException ex) {
             log(2, "Cant create MySQL Table: " + ex.getMessage());
         }
@@ -102,9 +102,8 @@ public class Reporter extends JavaPlugin {
                 int y = rs.getInt("y");
                 int z = rs.getInt("z");
                 String reason = rs.getString("reason");
-                //TODO: result
                 log(1, "id: " + id);
-                reports.add(new Report(this, sql, id, sender, reported, w, x, y, z, reason, false));
+                reports.add(new Report(this, sql, id, sender, reported, w, x, y, z, reason, false, null));
             }
         } catch (SQLException ex) {
             log(2, "Cant load Reporter's table: " + ex.getMessage());

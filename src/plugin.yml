@@ -7,7 +7,7 @@ commands:
    report:
      description: Main command
      permission: reporter.report
-     usage: Use /command help
+     usage: Use /report help
 permissions:
    reporter.report:
      description: Gives access to a Reporter command

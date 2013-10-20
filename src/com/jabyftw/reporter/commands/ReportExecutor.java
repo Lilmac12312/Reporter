@@ -72,14 +72,14 @@ public class ReportExecutor implements CommandExecutor {
             sender.sendMessage(ChatColor.GOLD + "/report list");
             sender.sendMessage(ChatColor.GOLD + "/report tp (id)");
             sender.sendMessage(ChatColor.GOLD + "/report info (id)");
-            sender.sendMessage(ChatColor.GOLD + "/report reopen (id) (reason)");
+            sender.sendMessage(ChatColor.GOLD + "/report reopen (id)");
             sender.sendMessage(ChatColor.GOLD + "/report close (id) (result)");
             return true;
 
         } else if (args[0].equalsIgnoreCase("tp")) {
             if (sender.hasPermission("reporter.report.tp")) {
                 if (sender instanceof Player) {
-                    if (args.length > 2) {
+                    if (args.length > 1) {
                         int id = Integer.parseInt(args[1]);
                         Report r = new Report(reporter, sql, id);
                         Player p = (Player) sender;
@@ -101,13 +101,13 @@ public class ReportExecutor implements CommandExecutor {
 
         } else if (args[0].equalsIgnoreCase("info")) {
             if (sender.hasPermission("reporter.report.info")) {
-                if (args.length > 2) {
+                if (args.length > 1) {
                     int id = Integer.parseInt(args[1]);
                     Report r = new Report(reporter, sql, id);
                     sender.sendMessage(ChatColor.BLUE + "Reporter: " + r.getSender() + " | Reported: " + r.getReported() + " | Coords: " + r.getX() + ", " + r.getY() + ", " + r.getZ());
                     sender.sendMessage(ChatColor.BLUE + "Reason: " + r.getReason());
                     if (r.isResolved()) {
-                        sender.sendMessage(ChatColor.BLUE + "Resolved: " + ChatColor.AQUA + "true" + ChatColor.BLUE + " | Result: "); //TODO: result
+                        sender.sendMessage(ChatColor.BLUE + "Resolved: " + ChatColor.AQUA + "true" + ChatColor.BLUE + " | Result: " + r.getResult());
                     } else {
                         sender.sendMessage(ChatColor.BLUE + "Resolved: " + ChatColor.RED + "false");
                     }
@@ -125,15 +125,16 @@ public class ReportExecutor implements CommandExecutor {
             if (sender.hasPermission("reporter.report.close")) {
                 if (args.length > 2) {
                     int id = Integer.parseInt(args[1]);
-                    for (Report r : reporter.reports) { //TODO: result, so the player can see what hapenned to the griefer
-                        if (r.getId() == id) {
-                            r.setResolved(true);
-                            r.updateStatus();
-                            reporter.reports.remove(r);
-                        }
-                        sender.sendMessage(ChatColor.AQUA + "Done!");
-                        return true;
+                    String result = combineSplit(2, args);
+                    Report r = new Report(reporter, sql, id);
+                    r.setResolved(true);
+                    r.setResult(result);
+                    r.updateStatus();
+                    if (reporter.reports.contains(r)) {
+                        reporter.reports.remove(r);
                     }
+                    sender.sendMessage(ChatColor.AQUA + "Done!");
+                    return true;
                 } else {
                     sender.sendMessage(ChatColor.RED + "Usage: /reporter close (id) (result)");
                     return true;
@@ -145,14 +146,14 @@ public class ReportExecutor implements CommandExecutor {
 
         } else if (args[0].equalsIgnoreCase("reopen")) {
             if (sender.hasPermission("reporter.report.reopen")) {
-                if (args.length > 2) {
+                if (args.length > 1) {
                     int id = Integer.parseInt(args[1]);
                     Report r = new Report(reporter, sql, id);
                     r.setResolved(false);
                     r.updateStatus();
                     reporter.reloadReports();
                 } else {
-                    sender.sendMessage(ChatColor.RED + "Usage: /reporter close (id) (result)");
+                    sender.sendMessage(ChatColor.RED + "Usage: /reporter reopen (id)");
                     return true;
                 }
             }
@@ -161,14 +162,14 @@ public class ReportExecutor implements CommandExecutor {
             if (sender.hasPermission("reporter.report")) {
                 if (sender instanceof Player) {
                     Player p = (Player) sender;
-                    if (args.length < 2) {
+                    if (args.length > 1) {
                         if (alreadyReport.contains(p)) {
                             sender.sendMessage(ChatColor.RED + "You already reported in the past " + ChatColor.DARK_RED + reporter.reportDelay + " minutes!");
                             return true;
                         } else {
                             Location loc = p.getLocation();
                             String reason = combineSplit(1, args);
-                            Report r = new Report(reporter, sql, sender.getName().toLowerCase(), args[0].toLowerCase(), loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), reason, false);
+                            Report r = new Report(reporter, sql, sender.getName().toLowerCase(), args[0].toLowerCase(), loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), reason, false, null);
                             r.insertReport();
                             reporter.reports.add(r);
                             alreadyReport.add(p);
@@ -178,7 +179,7 @@ public class ReportExecutor implements CommandExecutor {
                             return true;
                         }
                     } else {
-                        p.sendMessage("Usage: /reporter (name) (reason)");
+                        p.sendMessage(ChatColor.RED + "Usage: /reporter (name) (reason)");
                         return true;
                     }
                 } else {
