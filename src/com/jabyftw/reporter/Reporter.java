@@ -71,7 +71,9 @@ public class Reporter extends JavaPlugin {
                 getLogger().log(Level.INFO, msg);
                 break;
             case 1:
-                getLogger().log(Level.OFF, "DEBUG: " + msg);
+                if (debugEnabled) {
+                    getLogger().log(Level.OFF, "DEBUG: " + msg);
+                }
                 break;
             case 2:
                 getLogger().log(Level.WARNING, msg);

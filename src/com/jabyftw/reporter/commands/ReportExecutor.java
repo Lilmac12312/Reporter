@@ -83,9 +83,19 @@ public class ReportExecutor implements CommandExecutor {
                             int id = Integer.parseInt(args[1]);
                             Report r = new Report(reporter, sql, id);
                             Player p = (Player) sender;
-                            p.teleport(new Location(r.getW(), r.getX(), r.getY(), r.getZ()));
-                            p.sendMessage(ChatColor.GOLD + "Done!");
-                            return true;
+                            if(r.getW() == null) {
+                                p.sendMessage(ChatColor.RED + "World wasnt found!");
+                                return true;
+                            }
+                            Location loc = new Location(r.getW(), r.getX(), r.getY(), r.getZ());
+                            try {
+                                p.teleport(loc);
+                                p.sendMessage(ChatColor.GOLD + "Done!");
+                                return true;
+                            } catch (NullPointerException e) {
+                                p.sendMessage(ChatColor.DARK_RED + "Couldnt teleport! :/");
+                                return true;
+                            }
                         } else {
                             sender.sendMessage(ChatColor.RED + "Usage: /reporter tp (id)");
                             return true;
@@ -194,7 +204,9 @@ public class ReportExecutor implements CommandExecutor {
                                 alreadyReport.add(p);
                                 reporter.getServer().getScheduler().runTaskLater(reporter, new RemoveFromListTask(this, p), reporter.reportDelay * 20 * 60);
                                 sender.sendMessage(ChatColor.YELLOW + "Report sent! " + ChatColor.GOLD + "Our mods will take care of your issue!");
-                                sender.sendMessage(ChatColor.GOLD + "You can watch your report by using " + ChatColor.RED + "/report info " + r.getId());
+                                if (sender.hasPermission("reporter.report.info")) {
+                                    sender.sendMessage(ChatColor.GOLD + "You can watch your report by using " + ChatColor.RED + "/report info " + r.getId());
+                                }
                                 return true;
                             }
                         } else {

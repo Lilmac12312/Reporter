@@ -25,7 +25,7 @@ public final class Report {
         this.id = id;
         this.sql = sql;
         getInfoById();
-    }
+   }
 
     public Report(Reporter plugin, MySQLCon sql, String sender, String reported, World w, int x, int y, int z, String reason, boolean status, String result) {
         this.reporter = plugin;
