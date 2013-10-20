@@ -45,7 +45,7 @@ public class ReportExecutor implements CommandExecutor {
                 if (reporter.reports.size() > 0) {
                     int i = 0;
                     sender.sendMessage(ChatColor.GOLD + "ID" + ChatColor.GRAY + " | " + ChatColor.GOLD + "Sender" + ChatColor.GRAY + " | " + ChatColor.GOLD + "Reported" + ChatColor.GRAY + " | " + ChatColor.GOLD + "X, Y, Z" + ChatColor.GRAY + " | " + ChatColor.GOLD + "Reason");
-                    while (i < 11) {
+                    while (i < 10) {
                         for (Report r : reporter.reports) {
                             if (r.isResolved()) {
                                 i--;
@@ -84,7 +84,7 @@ public class ReportExecutor implements CommandExecutor {
                         Report r = new Report(reporter, sql, id);
                         Player p = (Player) sender;
                         p.teleport(new Location(r.getW(), r.getX(), r.getY(), r.getZ()));
-                        p.sendMessage(ChatColor.AQUA + "Done!");
+                        p.sendMessage(ChatColor.GOLD + "Done!");
                         return true;
                     } else {
                         sender.sendMessage(ChatColor.RED + "Usage: /reporter tp (id)");
@@ -103,13 +103,14 @@ public class ReportExecutor implements CommandExecutor {
             if (sender.hasPermission("reporter.report.info")) {
                 if (args.length > 1) {
                     int id = Integer.parseInt(args[1]);
+                    reporter.log(1, "ID: " + id + " | Args: " + args[0] + args[1]);
                     Report r = new Report(reporter, sql, id);
-                    sender.sendMessage(ChatColor.BLUE + "Reporter: " + r.getSender() + " | Reported: " + r.getReported() + " | Coords: " + r.getX() + ", " + r.getY() + ", " + r.getZ());
-                    sender.sendMessage(ChatColor.BLUE + "Reason: " + r.getReason());
+                    sender.sendMessage(ChatColor.GOLD + "Reporter: " + ChatColor.YELLOW + r.getSender() + ChatColor.GRAY + " | " + ChatColor.GOLD + "Reported: " + ChatColor.YELLOW + r.getReported() + ChatColor.GRAY + " | " + ChatColor.GOLD + "Coords: " + ChatColor.YELLOW + r.getX() + ", " + r.getY() + ", " + r.getZ());
+                    sender.sendMessage(ChatColor.GOLD + "Reason: " + ChatColor.YELLOW + r.getReason());
                     if (r.isResolved()) {
-                        sender.sendMessage(ChatColor.BLUE + "Resolved: " + ChatColor.AQUA + "true" + ChatColor.BLUE + " | Result: " + r.getResult());
+                        sender.sendMessage(ChatColor.GOLD + "Resolved: " + ChatColor.YELLOW + "yes" + ChatColor.GRAY + " | " + ChatColor.GOLD + "Result: " + ChatColor.YELLOW + r.getResult());
                     } else {
-                        sender.sendMessage(ChatColor.BLUE + "Resolved: " + ChatColor.RED + "false");
+                        sender.sendMessage(ChatColor.GOLD + "Resolved: " + ChatColor.DARK_RED + "no");
                     }
                     return true;
                 } else {
@@ -123,20 +124,28 @@ public class ReportExecutor implements CommandExecutor {
 
         } else if (args[0].equalsIgnoreCase("close")) {
             if (sender.hasPermission("reporter.report.close")) {
+                int id;
+                String result;
                 if (args.length > 2) {
-                    int id = Integer.parseInt(args[1]);
-                    String result = combineSplit(2, args);
-                    Report r = new Report(reporter, sql, id);
+                    id = Integer.parseInt(args[1]);
+                    result = combineSplit(2, args);
+                } else if (args.length > 1) {
+                    id = Integer.parseInt(args[1]);
+                    result = "didnt mentioned";
+                } else {
+                    sender.sendMessage(ChatColor.RED + "Usage: /reporter close (id) [result]");
+                    return true;
+                }
+                Report r = new Report(reporter, sql, id);
+                if (r.isResolved()) {
+                    sender.sendMessage(ChatColor.RED + "Report " + id + " is already closed!");
+                    return true;
+                } else {
                     r.setResolved(true);
                     r.setResult(result);
                     r.updateStatus();
-                    if (reporter.reports.contains(r)) {
-                        reporter.reports.remove(r);
-                    }
-                    sender.sendMessage(ChatColor.AQUA + "Done!");
-                    return true;
-                } else {
-                    sender.sendMessage(ChatColor.RED + "Usage: /reporter close (id) (result)");
+                    reporter.reloadReports();
+                    sender.sendMessage(ChatColor.GOLD + "Done!");
                     return true;
                 }
             } else {
@@ -149,9 +158,16 @@ public class ReportExecutor implements CommandExecutor {
                 if (args.length > 1) {
                     int id = Integer.parseInt(args[1]);
                     Report r = new Report(reporter, sql, id);
-                    r.setResolved(false);
-                    r.updateStatus();
-                    reporter.reloadReports();
+                    if (!r.isResolved()) {
+                        sender.sendMessage(ChatColor.RED + "Report " + id + " is already open!");
+                        return true;
+                    } else {
+                        r.setResolved(false);
+                        r.updateStatus();
+                        reporter.reloadReports();
+                        sender.sendMessage(ChatColor.GOLD + "Done!");
+                        return true;
+                    }
                 } else {
                     sender.sendMessage(ChatColor.RED + "Usage: /reporter reopen (id)");
                     return true;
@@ -164,18 +180,18 @@ public class ReportExecutor implements CommandExecutor {
                     Player p = (Player) sender;
                     if (args.length > 1) {
                         if (alreadyReport.contains(p)) {
-                            sender.sendMessage(ChatColor.RED + "You already reported in the past " + ChatColor.DARK_RED + reporter.reportDelay + " minutes!");
+                            sender.sendMessage(ChatColor.RED + "You already reported in the past " + ChatColor.DARK_RED + reporter.reportDelay + ChatColor.RED + " minutes!");
                             return true;
                         } else {
                             Location loc = p.getLocation();
                             String reason = combineSplit(1, args);
-                            Report r = new Report(reporter, sql, sender.getName().toLowerCase(), args[0].toLowerCase(), loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), reason, false, null);
+                            Report r = new Report(reporter, sql, sender.getName(), args[0], loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), reason, false, null);
                             r.insertReport();
                             reporter.reports.add(r);
                             alreadyReport.add(p);
                             reporter.getServer().getScheduler().runTaskLater(reporter, new RemoveFromListTask(this, p), reporter.reportDelay * 20 * 60);
-                            sender.sendMessage(ChatColor.AQUA + "Report sent! " + ChatColor.BLUE + "Our mods will take care of your issue!");
-                            sender.sendMessage(ChatColor.BLUE + "You can watch your report by using " + ChatColor.AQUA + "/report info " + r.getId());
+                            sender.sendMessage(ChatColor.YELLOW + "Report sent! " + ChatColor.GOLD + "Our mods will take care of your issue!");
+                            sender.sendMessage(ChatColor.GOLD + "You can watch your report by using " + ChatColor.RED + "/report info " + r.getId());
                             return true;
                         }
                     } else {

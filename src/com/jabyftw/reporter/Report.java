@@ -21,6 +21,7 @@ public final class Report {
     private World w;
 
     public Report(Reporter plugin, MySQLCon sql, int id) {
+        this.reporter = plugin;
         this.id = id;
         this.sql = sql;
         getInfoById();
@@ -139,7 +140,7 @@ public final class Report {
     public void updateStatus() {
         try {
             Statement s = sql.getConn().createStatement();
-            s.executeUpdate("UPDATE `" + reporter.tableName + "` SET `resolved`='" + resolved + "',`result`='" + result + "' WHERE `id`='" + id + "';");
+            s.executeUpdate("UPDATE `" + reporter.tableName + "` SET `resolved`=" + resolved + ",`result`='" + result + "' WHERE `id`='" + id + "';");
             reporter.log(1, id + ":" + resolved + ":" + result);
         } catch (SQLException ex) {
             reporter.log(2, "Failed to update report! " + ex.getMessage());
