@@ -25,6 +25,8 @@ public class RemoveFromListTask extends BukkitRunnable {
 
     @Override
     public void run() {
-        r.alreadyReport.remove(p);
+        if (r.alreadyReport.contains(p)) {
+            r.alreadyReport.remove(p);
+        }
     }
 }

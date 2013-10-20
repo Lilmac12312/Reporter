@@ -1,7 +1,5 @@
 package com.jabyftw.reporter;
 
-import com.jabyftw.reporter.commands.ReportStatusExecutor;
-import com.jabyftw.reporter.commands.ReportListExecutor;
 import com.jabyftw.reporter.commands.ReportExecutor;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -10,6 +8,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -33,8 +32,6 @@ public class Reporter extends JavaPlugin {
         log(0, "Loaded " + reports.size() + " reports.");
 
         getCommand("report").setExecutor(new ReportExecutor(this, sql));
-        getCommand("reportlist").setExecutor(new ReportListExecutor(this));
-        getCommand("reportstatus").setExecutor(new ReportStatusExecutor(this, sql));
     }
 
     @Override
@@ -85,8 +82,8 @@ public class Reporter extends JavaPlugin {
     private void createTable() {
         try {
             log(0, "Creating MySQL Table if not exists...");
-            Statement s = sql.getConn().createStatement();
-            s.execute("CREATE TABLE IF NOT EXISTS `" + tableName + "` (`id` int(11) NOT NULL AUTO_INCREMENT, `sender` varchar(32) NOT NULL, `reported` varchar(32) NOT NULL, `x` int(11) NOT NULL, `y` int(11) NOT NULL, `z` int(11) NOT NULL, `reason` text NOT NULL, `resolved` tinyint(1) NOT NULL DEFAULT '0', PRIMARY KEY (`id`)) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=3;");
+            Statement s = sql.getConn().createStatement(); //TODO: result
+            s.execute("CREATE TABLE IF NOT EXISTS `" + tableName + "` (`id` int(11) NOT NULL AUTO_INCREMENT, `sender` varchar(32) NOT NULL, `reported` varchar(32) NOT NULL, `worldname` varchar(56) NOT NULL, `x` int(11) NOT NULL DEFAULT '0', `y` int(11) NOT NULL DEFAULT '0', `z` int(11) NOT NULL DEFAULT '0', `reason` text NOT NULL,  `resolved` tinyint(1) NOT NULL DEFAULT '0', PRIMARY KEY (`id`)) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=5;");
         } catch (SQLException ex) {
             log(2, "Cant create MySQL Table: " + ex.getMessage());
         }
@@ -95,17 +92,19 @@ public class Reporter extends JavaPlugin {
     private void loadReports() {
         try {
             Statement s = sql.getConn().createStatement();
-            ResultSet rs = s.executeQuery("SELECT `id`, `sender`, `reported`, `x`, `y`, `z`, `reason` FROM `" + tableName + "` WHERE `resolved`=FALSE LIMIT 30;"); // will only load non-resolved issues
+            ResultSet rs = s.executeQuery("SELECT `id`, `sender`, `reported`, `worldname`, `x`, `y`, `z`, `reason` FROM `" + tableName + "` WHERE `resolved`=FALSE LIMIT 30;"); // will only load non-resolved issues
             while (rs.next()) {
                 int id = rs.getInt("id");
                 String sender = rs.getString("sender");
                 String reported = rs.getString("reported");
+                World w = getServer().getWorld(rs.getString("worldname"));
                 int x = rs.getInt("x");
                 int y = rs.getInt("y");
                 int z = rs.getInt("z");
                 String reason = rs.getString("reason");
+                //TODO: result
                 log(1, "id: " + id);
-                reports.add(new Report(this, sql, id, sender, reported, x, y, z, reason, false));
+                reports.add(new Report(this, sql, id, sender, reported, w, x, y, z, reason, false));
             }
         } catch (SQLException ex) {
             log(2, "Cant load Reporter's table: " + ex.getMessage());
