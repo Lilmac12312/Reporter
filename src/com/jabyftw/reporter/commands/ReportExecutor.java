@@ -40,74 +40,23 @@ public class ReportExecutor implements CommandExecutor {
             return false;
         } else {
 
-            if (args[0].equalsIgnoreCase("list")) {
-                if (sender.hasPermission("reporter.report.list")) {
-                    if (reporter.reports.size() > 0) {
-                        int i = 0;
-                        sender.sendMessage(ChatColor.GOLD + "ID" + ChatColor.GRAY + " | " + ChatColor.GOLD + "Sender" + ChatColor.GRAY + " | " + ChatColor.GOLD + "Reported" + ChatColor.GRAY + " | " + ChatColor.GOLD + "X, Y, Z" + ChatColor.GRAY + " | " + ChatColor.GOLD + "Reason");
-                        while (i < 10) {
-                            for (Report r : reporter.reports) {
-                                if (r.isResolved()) {
-                                    i--;
-                                    reporter.reports.remove(r); // Shouldnt be necessary... but...
-                                } else {
-                                    i++;
-                                    sender.sendMessage(ChatColor.RED + "" + r.getId() + ChatColor.GRAY + " | " + ChatColor.RED + "" + r.getSender() + ChatColor.GRAY + " | " + ChatColor.RED + "" + r.getReported() + ChatColor.GRAY + " | " + ChatColor.RED + "" + r.getX() + ", " + r.getY() + ", " + r.getZ() + ChatColor.GRAY + " | " + ChatColor.RED + "" + r.getReason());
-                                }
-                            }
-                            return true;
-                        }
-                        return true;
-                    } else {
-                        sender.sendMessage(ChatColor.RED + "No reports found.");
-                        return true;
-                    }
-                } else {
-                    sender.sendMessage(ChatColor.DARK_RED + "You dont have permission to do that!");
-                    return true;
-                }
-
-            } else if (args[0].equalsIgnoreCase("help")) {
+            if (args[0].equalsIgnoreCase("help")) {
+                sender.sendMessage(ChatColor.YELLOW + "Report'em all Plugin: Command list");
                 sender.sendMessage(ChatColor.GOLD + "/report (name) (reason)");
-                sender.sendMessage(ChatColor.GOLD + "/report list");
-                sender.sendMessage(ChatColor.GOLD + "/report tp (id)");
                 sender.sendMessage(ChatColor.GOLD + "/report info (id)");
-                sender.sendMessage(ChatColor.GOLD + "/report reopen (id)");
-                sender.sendMessage(ChatColor.GOLD + "/report close (id) (result)");
-                return true;
-
-            } else if (args[0].equalsIgnoreCase("tp")) {
-                if (sender.hasPermission("reporter.report.tp")) {
-                    if (sender instanceof Player) {
-                        if (args.length > 1) {
-                            int id = Integer.parseInt(args[1]);
-                            Report r = new Report(reporter, sql, id);
-                            Player p = (Player) sender;
-                            if(r.getW() == null) {
-                                p.sendMessage(ChatColor.RED + "World wasnt found!");
-                                return true;
-                            }
-                            Location loc = new Location(r.getW(), r.getX(), r.getY(), r.getZ());
-                            try {
-                                p.teleport(loc);
-                                p.sendMessage(ChatColor.GOLD + "Done!");
-                                return true;
-                            } catch (NullPointerException e) {
-                                p.sendMessage(ChatColor.DARK_RED + "Couldnt teleport! :/");
-                                return true;
-                            }
-                        } else {
-                            sender.sendMessage(ChatColor.RED + "Usage: /reporter tp (id)");
-                            return true;
-                        }
-                    } else {
-                        sender.sendMessage(ChatColor.RED + "This command cant be executed on Console!");
-                        return true;
-                    }
-                } else {
-                    sender.sendMessage(ChatColor.DARK_RED + "You dont have permission to do that!");
-                    return true;
+                if (sender.hasPermission("reporter.list")) {
+                    sender.sendMessage(ChatColor.GOLD + "/reporter list");
                 }
+                if (sender.hasPermission("reporter.tp")) {
+                    sender.sendMessage(ChatColor.GOLD + "/reporter tp (id)");
+                }
+                if (sender.hasPermission("reporter.reopen")) {
+                    sender.sendMessage(ChatColor.GOLD + "/reporter reopen (id)");
+                }
+                if (sender.hasPermission("reporter.close")) {
+                    sender.sendMessage(ChatColor.GOLD + "/reporter close (id) (result)");
+                }
+                return true;
 
             } else if (args[0].equalsIgnoreCase("info")) {
                 if (sender.hasPermission("reporter.report.info")) {
@@ -115,14 +64,19 @@ public class ReportExecutor implements CommandExecutor {
                         int id = Integer.parseInt(args[1]);
                         reporter.log(1, "ID: " + id + " | Args: " + args[0] + args[1]);
                         Report r = new Report(reporter, sql, id);
-                        sender.sendMessage(ChatColor.GOLD + "Reporter: " + ChatColor.YELLOW + r.getSender() + ChatColor.GRAY + " | " + ChatColor.GOLD + "Reported: " + ChatColor.YELLOW + r.getReported() + ChatColor.GRAY + " | " + ChatColor.GOLD + "Coords: " + ChatColor.YELLOW + r.getX() + ", " + r.getY() + ", " + r.getZ());
-                        sender.sendMessage(ChatColor.GOLD + "Reason: " + ChatColor.YELLOW + r.getReason());
-                        if (r.isResolved()) {
-                            sender.sendMessage(ChatColor.GOLD + "Resolved: " + ChatColor.YELLOW + "yes" + ChatColor.GRAY + " | " + ChatColor.GOLD + "Result: " + ChatColor.YELLOW + r.getResult());
+                        if (r.getSender().equals(sender.getName()) || sender.hasPermission("reporter.report.info.others")) {
+                            sender.sendMessage(ChatColor.GOLD + "Reporter: " + ChatColor.YELLOW + r.getSender() + ChatColor.GRAY + " | " + ChatColor.GOLD + "Reported: " + ChatColor.YELLOW + r.getReported() + ChatColor.GRAY + " | " + ChatColor.GOLD + "Coords: " + ChatColor.YELLOW + r.getX() + ", " + r.getY() + ", " + r.getZ());
+                            sender.sendMessage(ChatColor.GOLD + "Reason: " + ChatColor.YELLOW + r.getReason());
+                            if (r.isResolved()) {
+                                sender.sendMessage(ChatColor.GOLD + "Resolved: " + ChatColor.YELLOW + "yes" + ChatColor.GRAY + " | " + ChatColor.GOLD + "Result: " + ChatColor.YELLOW + r.getResult() + ChatColor.GRAY + " | " + ChatColor.GOLD + "Resolved by: " + ChatColor.YELLOW + r.getResolver());
+                            } else {
+                                sender.sendMessage(ChatColor.GOLD + "Resolved: " + ChatColor.DARK_RED + "no");
+                            }
+                            return true;
                         } else {
-                            sender.sendMessage(ChatColor.GOLD + "Resolved: " + ChatColor.DARK_RED + "no");
+                            sender.sendMessage(ChatColor.RED + "You cant see a report of another player!");
+                            return true;
                         }
-                        return true;
                     } else {
                         sender.sendMessage(ChatColor.RED + "Usage: /reporter info (id)");
                         return true;
@@ -131,62 +85,6 @@ public class ReportExecutor implements CommandExecutor {
                     sender.sendMessage(ChatColor.DARK_RED + "You dont have permission to do that!");
                     return true;
                 }
-
-            } else if (args[0].equalsIgnoreCase("close")) {
-                if (sender.hasPermission("reporter.report.close")) {
-                    int id;
-                    String result;
-                    if (args.length > 2) {
-                        id = Integer.parseInt(args[1]);
-                        result = combineSplit(2, args);
-                    } else if (args.length > 1) {
-                        id = Integer.parseInt(args[1]);
-                        result = "didnt mentioned";
-                    } else {
-                        sender.sendMessage(ChatColor.RED + "Usage: /reporter close (id) [result]");
-                        return true;
-                    }
-                    Report r = new Report(reporter, sql, id);
-                    if (r.isResolved()) {
-                        sender.sendMessage(ChatColor.RED + "Report " + id + " is already closed!");
-                        return true;
-                    } else {
-                        r.setResolved(true);
-                        r.setResult(result);
-                        r.updateStatus();
-                        reporter.reloadReports();
-                        sender.sendMessage(ChatColor.GOLD + "Done!");
-                        return true;
-                    }
-                } else {
-                    sender.sendMessage(ChatColor.DARK_RED + "You dont have permission to do that!");
-                    return true;
-                }
-
-            } else if (args[0].equalsIgnoreCase("reopen")) {
-                if (sender.hasPermission("reporter.report.reopen")) {
-                    if (args.length > 1) {
-                        int id = Integer.parseInt(args[1]);
-                        Report r = new Report(reporter, sql, id);
-                        if (!r.isResolved()) {
-                            sender.sendMessage(ChatColor.RED + "Report " + id + " is already open!");
-                            return true;
-                        } else {
-                            r.setResolved(false);
-                            r.updateStatus();
-                            reporter.reloadReports();
-                            sender.sendMessage(ChatColor.GOLD + "Done!");
-                            return true;
-                        }
-                    } else {
-                        sender.sendMessage(ChatColor.RED + "Usage: /reporter reopen (id)");
-                        return true;
-                    }
-                } else {
-                    sender.sendMessage(ChatColor.DARK_RED + "You dont have permission to do that!");
-                    return true;
-                }
-
             } else {
                 if (sender.hasPermission("reporter.report")) {
                     if (sender instanceof Player) {
@@ -197,8 +95,8 @@ public class ReportExecutor implements CommandExecutor {
                                 return true;
                             } else {
                                 Location loc = p.getLocation();
-                                String reason = combineSplit(1, args);
-                                Report r = new Report(reporter, sql, sender.getName(), args[0], loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), reason, false, null);
+                                String reason = reporter.combineSplit(1, args);
+                                Report r = new Report(reporter, sql, sender.getName(), args[0], loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), reason, false, null, null);
                                 r.insertReport();
                                 reporter.reports.add(r);
                                 alreadyReport.add(p);
@@ -224,23 +122,4 @@ public class ReportExecutor implements CommandExecutor {
             }
         }
     }
-
-    // From: https://github.com/deathmarine/Ultrabans/blob/master/src/com/modcrafting/ultrabans/util/Formatting.java#L47
-    // Sorry, I cant do that by myself now
-    private String combineSplit(int startIndex, String[] args) {
-        StringBuilder builder = new StringBuilder();
-        if (args.length >= 1) {
-            for (int i = startIndex; i < args.length; i++) {
-                builder.append(args[i]);
-                builder.append(" ");
-            }
-
-            if (builder.length() > 1) {
-                builder.deleteCharAt(builder.length() - 1);
-                return builder.toString();
-            }
-        }
-        return null;
-    }
-
 }

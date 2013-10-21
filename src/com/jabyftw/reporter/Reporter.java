@@ -1,5 +1,6 @@
 package com.jabyftw.reporter;
 
+import com.jabyftw.reporter.commands.ReporterExecutor;
 import com.jabyftw.reporter.commands.ReportExecutor;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -32,6 +33,7 @@ public class Reporter extends JavaPlugin {
         log(0, "Loaded " + reports.size() + " reports.");
 
         getCommand("report").setExecutor(new ReportExecutor(this, sql));
+        getCommand("reporter").setExecutor(new ReporterExecutor(this, sql));
     }
 
     @Override
@@ -81,11 +83,29 @@ public class Reporter extends JavaPlugin {
         }
     }
 
+    // From: https://github.com/deathmarine/Ultrabans/blob/master/src/com/modcrafting/ultrabans/util/Formatting.java#L47
+    // Sorry, I cant do that by myself now
+    public String combineSplit(int startIndex, String[] args) {
+        StringBuilder builder = new StringBuilder();
+        if (args.length >= 1) {
+            for (int i = startIndex; i < args.length; i++) {
+                builder.append(args[i]);
+                builder.append(" ");
+            }
+
+            if (builder.length() > 1) {
+                builder.deleteCharAt(builder.length() - 1);
+                return builder.toString();
+            }
+        }
+        return null;
+    }
+
     private void createTable() {
         try {
             log(0, "Creating MySQL Table if not exists...");
             Statement s = sql.getConn().createStatement();
-            s.execute("CREATE TABLE IF NOT EXISTS `" + tableName + "` ( `id` int(11) NOT NULL AUTO_INCREMENT, `sender` varchar(32) NOT NULL, `reported` varchar(32) NOT NULL, `worldname` varchar(56) NOT NULL, `x` int(11) NOT NULL DEFAULT '0', `y` int(11) NOT NULL DEFAULT '0', `z` int(11) NOT NULL DEFAULT '0', `reason` text NOT NULL, `resolved` tinyint(1) NOT NULL DEFAULT '0', `result` text, PRIMARY KEY (`id`)) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=5;");
+            s.execute("CREATE TABLE IF NOT EXISTS `" + tableName + "` (`id` int(11) NOT NULL AUTO_INCREMENT, `sender` varchar(32) NOT NULL, `reported` varchar(32) NOT NULL, `worldname` varchar(56) NOT NULL, `x` int(11) NOT NULL DEFAULT '0', `y` int(11) NOT NULL DEFAULT '0', `z` int(11) NOT NULL DEFAULT '0', `reason` text NOT NULL, `resolved` tinyint(1) NOT NULL DEFAULT '0', `result` text, `resolver` varchar(32) NOT NULL DEFAULT 'Nobody', PRIMARY KEY (`id`)) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=9 ;");
         } catch (SQLException ex) {
             log(2, "Cant create MySQL Table: " + ex.getMessage());
         }
@@ -105,7 +125,7 @@ public class Reporter extends JavaPlugin {
                 int z = rs.getInt("z");
                 String reason = rs.getString("reason");
                 log(1, "id: " + id);
-                reports.add(new Report(this, sql, id, sender, reported, w, x, y, z, reason, false, null));
+                reports.add(new Report(this, sql, id, sender, reported, w, x, y, z, reason, false, null, null));
             }
         } catch (SQLException ex) {
             log(2, "Cant load Reporter's table: " + ex.getMessage());

@@ -15,7 +15,7 @@ public final class Report {
 
     private Reporter reporter;
     private MySQLCon sql;
-    private String sender, reported, reason, result;
+    private String sender, reported, reason, result, resolver;
     private int id, x, y, z;
     private boolean resolved;
     private World w;
@@ -25,9 +25,9 @@ public final class Report {
         this.id = id;
         this.sql = sql;
         getInfoById();
-   }
+    }
 
-    public Report(Reporter plugin, MySQLCon sql, String sender, String reported, World w, int x, int y, int z, String reason, boolean status, String result) {
+    public Report(Reporter plugin, MySQLCon sql, String sender, String reported, World w, int x, int y, int z, String reason, boolean status, String result, String resolver) {
         this.reporter = plugin;
         this.sql = sql;
         this.sender = sender;
@@ -39,9 +39,10 @@ public final class Report {
         this.reason = reason;
         this.resolved = status;
         this.result = result;
+        this.resolver = resolver;
     }
 
-    public Report(Reporter plugin, MySQLCon sql, int id, String sender, String reported, World w, int x, int y, int z, String reason, boolean status, String result) {
+    public Report(Reporter plugin, MySQLCon sql, int id, String sender, String reported, World w, int x, int y, int z, String reason, boolean status, String result, String resolver) {
         this.reporter = plugin;
         this.sql = sql;
         this.id = id;
@@ -54,6 +55,15 @@ public final class Report {
         this.reason = reason;
         this.resolved = status;
         this.result = result;
+        this.resolver = resolver;
+    }
+
+    public String getResolver() {
+        return resolver;
+    }
+
+    public void setResolver(String resolver) {
+        this.resolver = resolver;
     }
 
     public boolean isResolved() {
@@ -107,7 +117,7 @@ public final class Report {
     public void getInfoById() {
         try {
             Statement s = sql.getConn().createStatement();
-            ResultSet rs = s.executeQuery("SELECT `sender`, `reported`, `worldname`, `x`, `y`, `z`, `reason`, `resolved`, `result` FROM `" + reporter.tableName + "` WHERE `id`=" + id + " LIMIT 2;");
+            ResultSet rs = s.executeQuery("SELECT `sender`, `reported`, `worldname`, `x`, `y`, `z`, `reason`, `resolved`, `result`, `resolver` FROM `" + reporter.tableName + "` WHERE `id`=" + id + " LIMIT 2;");
             while (rs.next()) {
                 sender = rs.getString("sender");
                 reported = rs.getString("reported");
@@ -118,6 +128,7 @@ public final class Report {
                 reason = rs.getString("reason");
                 resolved = rs.getBoolean("resolved");
                 result = rs.getString("result");
+                resolver = rs.getString("resolver");
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -127,7 +138,7 @@ public final class Report {
     public void insertReport() {
         try {
             Statement s = sql.getConn().createStatement();
-            s.execute("INSERT INTO `reporter`(`sender`, `reported`, `worldname`, `x`, `y`, `z`, `reason`, `resolved`, `result`) VALUES ('" + sender + "','" + reported + "','" + w.getName() + "','" + x + "','" + y + "','" + z + "','" + reason + "'," + resolved + ",'" + result + "')", Statement.RETURN_GENERATED_KEYS);
+            s.execute("INSERT INTO `reporter`(`sender`, `reported`, `worldname`, `x`, `y`, `z`, `reason`, `resolved`, `result`, `resolver`) VALUES ('" + sender + "','" + reported + "','" + w.getName() + "','" + x + "','" + y + "','" + z + "','" + reason + "'," + resolved + ",'" + result + "', '" + resolver + "')", Statement.RETURN_GENERATED_KEYS);
             ResultSet rs = s.getGeneratedKeys();
             while (rs.next()) {
                 id = rs.getInt(1);
@@ -140,8 +151,8 @@ public final class Report {
     public void updateStatus() {
         try {
             Statement s = sql.getConn().createStatement();
-            s.executeUpdate("UPDATE `" + reporter.tableName + "` SET `resolved`=" + resolved + ",`result`='" + result + "' WHERE `id`='" + id + "';");
-            reporter.log(1, id + ":" + resolved + ":" + result);
+            s.executeUpdate("UPDATE `" + reporter.tableName + "` SET `resolved`=" + resolved + ",`result`='" + result + "',`resolver`='" + resolver + "' WHERE `id`='" + id + "';");
+            reporter.log(1, id + ":" + resolved + ":" + result + " by " + resolver);
         } catch (SQLException ex) {
             reporter.log(2, "Failed to update report! " + ex.getMessage());
         }

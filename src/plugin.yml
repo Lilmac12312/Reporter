@@ -1,12 +1,16 @@
 name: Reporter
-version: 0.1.1
+version: 0.2
 author: rfsantos1996
 main: com.jabyftw.reporter.Reporter
 description: Report griefers!
 commands:
    report:
-     description: Main command
+     description: Main PLAYER command
      permission: reporter.report
+     usage: Use /report help
+   reporter:
+     description: Main MOD command
+     permission: reporter.reporter
      usage: Use /report help
 permissions:
    reporter.report:
@@ -14,13 +18,19 @@ permissions:
      default: true
    reporter.report.info:
      description: Gives access to a Reporter command
-     default: op
-   reporter.report.list:
+     default: true
+   reporter.report.info.others:
      description: Gives access to a Reporter command
      default: op
-   reporter.report.close:
+   reporter.list:
      description: Gives access to a Reporter command
      default: op
-   reporter.report.reopen:
+   reporter.close:
+     description: Gives access to a Reporter command
+     default: op
+   reporter.reopen:
+     description: Gives access to a Reporter command
+     default: op
+   reporter.tp:
      description: Gives access to a Reporter command
      default: op
