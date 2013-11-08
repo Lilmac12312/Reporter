@@ -16,8 +16,8 @@ import org.bukkit.entity.Player;
  */
 public class ReporterExecutor implements CommandExecutor {
 
-    private Reporter reporter;
-    private MySQLCon sql;
+    private final Reporter reporter;
+    private final MySQLCon sql;
 
     public ReporterExecutor(Reporter plugin, MySQLCon sql) {
         this.reporter = plugin;

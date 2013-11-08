@@ -2,13 +2,13 @@ package com.jabyftw.reporter;
 
 import com.jabyftw.reporter.commands.ReporterExecutor;
 import com.jabyftw.reporter.commands.ReportExecutor;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
+import me.muizers.Notifications.Notifications;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -17,20 +17,28 @@ public class Reporter extends JavaPlugin {
 
     MySQLCon sql;
 
-    private String username, password, url;
-    private boolean debugEnabled;
-    public String tableName;
-    public int reportDelay;
     public List<Report> reports = new ArrayList<Report>();
+    public FileConfiguration config;
+    public Notifications notifications;
 
     @Override
     public void onEnable() {
+        config = getConfig();
         genConfig();
 
-        sql = new MySQLCon(this, username, password, url);
+        sql = new MySQLCon(this, config.getString("MySQL.username"), config.getString("MySQL.password"), "jdbc:mysql://" + config.getString("MySQL.url.host") + ":" + config.getInt("MySQL.url.port") + "/" + config.getString("MySQL.url.database"));
         createTable();
         loadReports();
         log(0, "Loaded " + reports.size() + " reports.");
+
+        if (config.getBoolean("Config.useNotifications")) {
+            notifications = (Notifications) getServer().getPluginManager().getPlugin("Notifications");
+            if (notifications == null) {
+                log(0, "Notifications plugin not found! But we're running!");
+            } else {
+                log(0, "Linked with Notifications! (;");
+            }
+        }
 
         getCommand("report").setExecutor(new ReportExecutor(this, sql));
         getCommand("reporter").setExecutor(new ReporterExecutor(this, sql));
@@ -42,7 +50,6 @@ public class Reporter extends JavaPlugin {
     }
 
     private void genConfig() {
-        FileConfiguration config = getConfig();
         config.addDefault("MySQL.username", "root");
         config.addDefault("MySQL.password", "123");
         config.addDefault("MySQL.table", "reporter");
@@ -50,16 +57,11 @@ public class Reporter extends JavaPlugin {
         config.addDefault("MySQL.url.port", 3306);
         config.addDefault("MySQL.url.database", "minecraft");
         config.addDefault("Config.reportDelayInMinutes", 30);
+        config.addDefault("Config.useNotifications", true);
         config.addDefault("Config.debug", false);
         config.options().copyDefaults(true);
         saveConfig();
         reloadConfig();
-        url = "jdbc:mysql://" + config.getString("MySQL.url.host") + ":" + config.getInt("MySQL.url.port") + "/" + config.getString("MySQL.url.database");
-        username = config.getString("MySQL.username");
-        password = config.getString("MySQL.password");
-        debugEnabled = config.getBoolean("Config.debug");
-        tableName = config.getString("MySQL.table");
-        reportDelay = config.getInt("Config.reportDelayInMinutes");
     }
 
     /*
@@ -73,7 +75,7 @@ public class Reporter extends JavaPlugin {
                 getLogger().log(Level.INFO, msg);
                 break;
             case 1:
-                if (debugEnabled) {
+                if (config.getBoolean("Config.debug")) {
                     getLogger().log(Level.OFF, "DEBUG: " + msg);
                 }
                 break;
@@ -105,7 +107,7 @@ public class Reporter extends JavaPlugin {
         try {
             log(0, "Creating MySQL Table if not exists...");
             Statement s = sql.getConn().createStatement();
-            s.execute("CREATE TABLE IF NOT EXISTS `" + tableName + "` (`id` int(11) NOT NULL AUTO_INCREMENT, `sender` varchar(32) NOT NULL, `reported` varchar(32) NOT NULL, `worldname` varchar(56) NOT NULL, `x` int(11) NOT NULL DEFAULT '0', `y` int(11) NOT NULL DEFAULT '0', `z` int(11) NOT NULL DEFAULT '0', `reason` text NOT NULL, `resolved` tinyint(1) NOT NULL DEFAULT '0', `result` text, `resolver` varchar(32) NOT NULL DEFAULT 'Nobody', PRIMARY KEY (`id`)) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=9 ;");
+            s.execute("CREATE TABLE IF NOT EXISTS `" + config.getString("MySQL.table") + "` (`id` int(11) NOT NULL AUTO_INCREMENT, `sender` varchar(32) NOT NULL, `reported` varchar(32) NOT NULL, `worldname` varchar(56) NOT NULL, `x` int(11) NOT NULL DEFAULT '0', `y` int(11) NOT NULL DEFAULT '0', `z` int(11) NOT NULL DEFAULT '0', `reason` text NOT NULL, `resolved` tinyint(1) NOT NULL DEFAULT '0', `result` text, `resolver` varchar(32) NOT NULL DEFAULT 'Nobody', PRIMARY KEY (`id`)) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=9 ;");
         } catch (SQLException ex) {
             log(2, "Cant create MySQL Table: " + ex.getMessage());
         }
@@ -114,7 +116,7 @@ public class Reporter extends JavaPlugin {
     private void loadReports() {
         try {
             Statement s = sql.getConn().createStatement();
-            ResultSet rs = s.executeQuery("SELECT `id`, `sender`, `reported`, `worldname`, `x`, `y`, `z`, `reason` FROM `" + tableName + "` WHERE `resolved`=FALSE LIMIT 30;"); // will only load non-resolved issues
+            ResultSet rs = s.executeQuery("SELECT `id`, `sender`, `reported`, `worldname`, `x`, `y`, `z`, `reason` FROM `" + config.getString("MySQL.table") + "` WHERE `resolved`=FALSE LIMIT 30;"); // will only load non-resolved issues
             while (rs.next()) {
                 int id = rs.getInt("id");
                 String sender = rs.getString("sender");

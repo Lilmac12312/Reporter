@@ -1,8 +1,9 @@
 name: Reporter
-version: 0.2
+version: 0.3
 author: rfsantos1996
 main: com.jabyftw.reporter.Reporter
 description: Report griefers!
+softdepend: [Notifications]
 commands:
    report:
      description: Main PLAYER command

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import me.muizers.Notifications.Notification;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
@@ -24,8 +25,8 @@ import org.bukkit.entity.Player;
  */
 public class ReportExecutor implements CommandExecutor {
 
-    private Reporter reporter;
-    private MySQLCon sql;
+    private final Reporter reporter;
+    private final MySQLCon sql;
     private String Formatting;
     public List<Player> alreadyReport = new ArrayList<Player>();
 
@@ -91,7 +92,7 @@ public class ReportExecutor implements CommandExecutor {
                         Player p = (Player) sender;
                         if (args.length > 1) {
                             if (alreadyReport.contains(p)) {
-                                sender.sendMessage(ChatColor.RED + "You already reported in the past " + ChatColor.DARK_RED + reporter.reportDelay + ChatColor.RED + " minutes!");
+                                sender.sendMessage(ChatColor.RED + "You already reported in the past " + ChatColor.DARK_RED + reporter.config.getInt("Config.reportDelayInMinutes") + ChatColor.RED + " minutes!");
                                 return true;
                             } else {
                                 Location loc = p.getLocation();
@@ -100,10 +101,14 @@ public class ReportExecutor implements CommandExecutor {
                                 r.insertReport();
                                 reporter.reports.add(r);
                                 alreadyReport.add(p);
-                                reporter.getServer().getScheduler().runTaskLater(reporter, new RemoveFromListTask(this, p), reporter.reportDelay * 20 * 60);
+                                reporter.getServer().getScheduler().runTaskLater(reporter, new RemoveFromListTask(this, p), reporter.config.getInt("Config.reportDelayInMinutes") * 20 * 60);
                                 sender.sendMessage(ChatColor.YELLOW + "Report sent! " + ChatColor.GOLD + "Our mods will take care of your issue!");
                                 if (sender.hasPermission("reporter.report.info")) {
                                     sender.sendMessage(ChatColor.GOLD + "You can watch your report by using " + ChatColor.RED + "/report info " + r.getId());
+                                }
+                                if(reporter.notifications != null) {
+                                    Notification notf = new Notification("New report from " + sender.getName()+ " @ " + loc.getBlockX() +", "+ loc.getBlockY() +", "+ loc.getBlockZ(), "Reason: " + reason);
+                                    reporter.notifications.showNotification(notf);
                                 }
                                 return true;
                             }

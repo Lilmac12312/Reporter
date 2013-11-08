@@ -1,11 +1,8 @@
 package com.jabyftw.reporter;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import org.bukkit.ChatColor;
 import org.bukkit.World;
 
 /**
@@ -13,8 +10,8 @@ import org.bukkit.World;
  */
 public final class Report {
 
-    private Reporter reporter;
-    private MySQLCon sql;
+    private final Reporter reporter;
+    private final MySQLCon sql;
     private String sender, reported, reason, result, resolver;
     private int id, x, y, z;
     private boolean resolved;
@@ -117,7 +114,7 @@ public final class Report {
     public void getInfoById() {
         try {
             Statement s = sql.getConn().createStatement();
-            ResultSet rs = s.executeQuery("SELECT `sender`, `reported`, `worldname`, `x`, `y`, `z`, `reason`, `resolved`, `result`, `resolver` FROM `" + reporter.tableName + "` WHERE `id`=" + id + " LIMIT 2;");
+            ResultSet rs = s.executeQuery("SELECT `sender`, `reported`, `worldname`, `x`, `y`, `z`, `reason`, `resolved`, `result`, `resolver` FROM `" + reporter.config.getString("MySQL.table") + "` WHERE `id`=" + id + " LIMIT 2;");
             while (rs.next()) {
                 sender = rs.getString("sender");
                 reported = rs.getString("reported");
@@ -151,7 +148,7 @@ public final class Report {
     public void updateStatus() {
         try {
             Statement s = sql.getConn().createStatement();
-            s.executeUpdate("UPDATE `" + reporter.tableName + "` SET `resolved`=" + resolved + ",`result`='" + result + "',`resolver`='" + resolver + "' WHERE `id`='" + id + "';");
+            s.executeUpdate("UPDATE `" + reporter.config.getString("MySQL.table") + "` SET `resolved`=" + resolved + ",`result`='" + result + "',`resolver`='" + resolver + "' WHERE `id`='" + id + "';");
             reporter.log(1, id + ":" + resolved + ":" + result + " by " + resolver);
         } catch (SQLException ex) {
             reporter.log(2, "Failed to update report! " + ex.getMessage());
