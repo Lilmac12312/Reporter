@@ -3,6 +3,7 @@ package com.jabyftw.reporter.commands;
 import com.jabyftw.reporter.MySQLCon;
 import com.jabyftw.reporter.Report;
 import com.jabyftw.reporter.Reporter;
+import me.muizers.Notifications.Notification;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
@@ -15,15 +16,15 @@ import org.bukkit.entity.Player;
  * @author Rafael
  */
 public class ReporterExecutor implements CommandExecutor {
-
+    
     private final Reporter reporter;
     private final MySQLCon sql;
-
+    
     public ReporterExecutor(Reporter plugin, MySQLCon sql) {
         this.reporter = plugin;
         this.sql = sql;
     }
-
+    
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (args.length < 1) {
@@ -61,18 +62,23 @@ public class ReporterExecutor implements CommandExecutor {
                         if (args.length > 1) {
                             int id = Integer.parseInt(args[1]);
                             Report r = new Report(reporter, sql, id);
-                            Player p = (Player) sender;
-                            if (r.getW() == null) {
-                                p.sendMessage(ChatColor.RED + "World wasnt found!");
-                                return true;
-                            }
-                            Location loc = new Location(r.getW(), r.getX(), r.getY(), r.getZ());
-                            try {
-                                p.teleport(loc);
-                                p.sendMessage(ChatColor.GOLD + "Done!");
-                                return true;
-                            } catch (NullPointerException e) {
-                                p.sendMessage(ChatColor.DARK_RED + "Couldnt teleport! :/");
+                            if (!r.isNull()) {
+                                Player p = (Player) sender;
+                                if (r.getW() == null) {
+                                    p.sendMessage(ChatColor.RED + "World wasnt found!");
+                                    return true;
+                                }
+                                Location loc = new Location(r.getW(), r.getX(), r.getY(), r.getZ());
+                                try {
+                                    p.teleport(loc);
+                                    p.sendMessage(ChatColor.GOLD + "Done!");
+                                    return true;
+                                } catch (NullPointerException e) {
+                                    p.sendMessage(ChatColor.DARK_RED + "Couldnt teleport! :/");
+                                    return true;
+                                }
+                            } else {
+                                sender.sendMessage(ChatColor.RED + "Invalid ID!");
                                 return true;
                             }
                         } else {
@@ -102,36 +108,50 @@ public class ReporterExecutor implements CommandExecutor {
                         return true;
                     }
                     Report r = new Report(reporter, sql, id);
-                    if (r.isResolved()) {
-                        sender.sendMessage(ChatColor.RED + "Report " + id + " is already closed!");
-                        return true;
+                    if (!r.isNull()) {
+                        if (r.isResolved()) {
+                            sender.sendMessage(ChatColor.RED + "Report " + id + " is already closed!");
+                            return true;
+                        } else {
+                            r.setResolved(true);
+                            r.setResolver(sender.getName());
+                            r.setResult(result);
+                            r.updateStatus();
+                            reporter.reloadReports();
+                            sender.sendMessage(ChatColor.GOLD + "Done!");
+                            if (reporter.notifications != null) {
+                                Notification notf = new Notification("Closed report: " + r.getId() + "!", "Closed by: " + r.getResolver() + " | Result: " + r.getResult());
+                                reporter.notifications.showNotification(notf);
+                            }
+                            return true;
+                        }
                     } else {
-                        r.setResolved(true);
-                        r.setResolver(sender.getName());
-                        r.setResult(result);
-                        r.updateStatus();
-                        reporter.reloadReports();
-                        sender.sendMessage(ChatColor.GOLD + "Done!");
+                        sender.sendMessage(ChatColor.RED + "Invalid ID!");
                         return true;
                     }
                 } else {
                     sender.sendMessage(ChatColor.DARK_RED + "You dont have permission to do that!");
                     return true;
                 }
-
+                
             } else if (args[0].equalsIgnoreCase("reopen")) {
                 if (sender.hasPermission("reporter.reopen")) {
                     if (args.length > 1) {
                         int id = Integer.parseInt(args[1]);
                         Report r = new Report(reporter, sql, id);
-                        if (!r.isResolved()) {
-                            sender.sendMessage(ChatColor.RED + "Report " + id + " is already open!");
-                            return true;
+                        if (!r.isNull()) {
+                            if (!r.isResolved()) {
+                                sender.sendMessage(ChatColor.RED + "Report " + id + " is already open!");
+                                return true;
+                            } else {
+                                r.setResolved(false);
+                                r.updateStatus();
+                                reporter.reloadReports();
+                                sender.sendMessage(ChatColor.GOLD + "Done!");
+                                return true;
+                            }
                         } else {
-                            r.setResolved(false);
-                            r.updateStatus();
-                            reporter.reloadReports();
-                            sender.sendMessage(ChatColor.GOLD + "Done!");
+                            sender.sendMessage(ChatColor.RED + "Invalid ID!");
                             return true;
                         }
                     } else {

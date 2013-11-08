@@ -10,7 +10,7 @@ commands:
      permission: reporter.report
      usage: Use /report help
    reporter:
-     description: Main MOD command
+     description: Main ADMIN command
      permission: reporter.reporter
      usage: Use /report help
 permissions:

@@ -14,7 +14,7 @@ public final class Report {
     private final MySQLCon sql;
     private String sender, reported, reason, result, resolver;
     private int id, x, y, z;
-    private boolean resolved;
+    private boolean resolved, isNull;
     private World w;
 
     public Report(Reporter plugin, MySQLCon sql, int id) {
@@ -37,6 +37,7 @@ public final class Report {
         this.resolved = status;
         this.result = result;
         this.resolver = resolver;
+        this.isNull = false;
     }
 
     public Report(Reporter plugin, MySQLCon sql, int id, String sender, String reported, World w, int x, int y, int z, String reason, boolean status, String result, String resolver) {
@@ -53,6 +54,7 @@ public final class Report {
         this.resolved = status;
         this.result = result;
         this.resolver = resolver;
+        this.isNull = false;
     }
 
     public String getResolver() {
@@ -69,6 +71,10 @@ public final class Report {
 
     public void setResolved(boolean resolved) {
         this.resolved = resolved;
+    }
+    
+    public boolean isNull() {
+        return isNull;
     }
 
     public String getResult() {
@@ -126,7 +132,10 @@ public final class Report {
                 resolved = rs.getBoolean("resolved");
                 result = rs.getString("result");
                 resolver = rs.getString("resolver");
+                isNull = false;
+                return;
             }
+            isNull = true;
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
