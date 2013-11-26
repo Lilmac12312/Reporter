@@ -59,9 +59,25 @@ public class Reporter extends JavaPlugin {
         config.addDefault("Config.reportDelayInMinutes", 30);
         config.addDefault("Config.useNotifications", true);
         config.addDefault("Config.debug", false);
+        config.addDefault("lang.onlyIngame", "&cThis command can just be executed ingame.");
+        config.addDefault("lang.noPermission", "&4You dont have permission to do that.");
+        config.addDefault("lang.invalidId", "&cInvalid ID!");
+        config.addDefault("lang.noResult", "didnt mentioned");
+        config.addDefault("lang.reporterInfo", "&6Reporter: &e%sender &7|&6 Reported: &e%reported &7|&6 Coords: &e%X&6, &e%Y&6, &e%Z");
+        config.addDefault("lang.reason", "&6Reason: %reason");
+        config.addDefault("lang.resolvedYes", "&6Resolved: &eYes &7|&6 Result: %result &7|&6 Resolved by: %owner");
+        config.addDefault("lang.resolvedNo", "&6Resolved: &4No");
+        config.addDefault("lang.reportSent", "&eReport sent! &6Our mods will take care of your issue!");
+        config.addDefault("lang.reportInfo", "&6You can watch your report by using &c/report info %id");
+        config.addDefault("lang.alreadyReported", "&cYou have already reported in the past &4%time &cminutes!");
+        config.addDefault("lang.cantSeeOtherPlayerReport", "&cYou cant see a report from another player.");
         config.options().copyDefaults(true);
         saveConfig();
         reloadConfig();
+    }
+    
+    public String getLang(String lang) {
+        return config.getString(lang).replaceAll("&", "§");
     }
 
     /*

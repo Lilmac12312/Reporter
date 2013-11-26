@@ -16,15 +16,15 @@ import org.bukkit.entity.Player;
  * @author Rafael
  */
 public class ReporterExecutor implements CommandExecutor {
-    
+
     private final Reporter reporter;
     private final MySQLCon sql;
-    
+
     public ReporterExecutor(Reporter plugin, MySQLCon sql) {
         this.reporter = plugin;
         this.sql = sql;
     }
-    
+
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (args.length < 1) {
@@ -53,7 +53,7 @@ public class ReporterExecutor implements CommandExecutor {
                         return true;
                     }
                 } else {
-                    sender.sendMessage(ChatColor.DARK_RED + "You dont have permission to do that!");
+                    sender.sendMessage(reporter.getLang("lang.noPermission"));
                     return true;
                 }
             } else if (args[0].equalsIgnoreCase("tp")) {
@@ -61,8 +61,8 @@ public class ReporterExecutor implements CommandExecutor {
                     if (sender instanceof Player) {
                         if (args.length > 1) {
                             int id = Integer.parseInt(args[1]);
-                            Report r = new Report(reporter, sql, id);
-                            if (!r.isNull()) {
+                            try {
+                                Report r = new Report(reporter, sql, id);
                                 Player p = (Player) sender;
                                 if (r.getW() == null) {
                                     p.sendMessage(ChatColor.RED + "World wasnt found!");
@@ -74,23 +74,22 @@ public class ReporterExecutor implements CommandExecutor {
                                     p.sendMessage(ChatColor.GOLD + "Done!");
                                     return true;
                                 } catch (NullPointerException e) {
-                                    p.sendMessage(ChatColor.DARK_RED + "Couldnt teleport! :/");
+                                    p.sendMessage(ChatColor.DARK_RED + "Couldnt teleport: " + e.getMessage());
                                     return true;
                                 }
-                            } else {
-                                sender.sendMessage(ChatColor.RED + "Invalid ID!");
+                            } catch (NullPointerException npe) {
+                                sender.sendMessage(reporter.getLang("lang.invalidId"));
                                 return true;
                             }
                         } else {
-                            sender.sendMessage(ChatColor.RED + "Usage: /reporter tp (id)");
-                            return true;
+                            return false;
                         }
                     } else {
-                        sender.sendMessage(ChatColor.RED + "This command cant be executed on Console!");
+                        sender.sendMessage(reporter.getLang("lang.onlyIngame"));
                         return true;
                     }
                 } else {
-                    sender.sendMessage(ChatColor.DARK_RED + "You dont have permission to do that!");
+                    sender.sendMessage(reporter.getLang("lang.noPermission"));
                     return true;
                 }
             } else if (args[0].equalsIgnoreCase("close")) {
@@ -102,13 +101,14 @@ public class ReporterExecutor implements CommandExecutor {
                         result = reporter.combineSplit(2, args);
                     } else if (args.length > 1) {
                         id = Integer.parseInt(args[1]);
-                        result = "didnt mentioned";
+                        result = reporter.getLang("lang.noResult");
                     } else {
                         sender.sendMessage(ChatColor.RED + "Usage: /reporter close (id) [result]");
                         return true;
                     }
-                    Report r = new Report(reporter, sql, id);
-                    if (!r.isNull()) {
+
+                    try {
+                        Report r = new Report(reporter, sql, id);
                         if (r.isResolved()) {
                             sender.sendMessage(ChatColor.RED + "Report " + id + " is already closed!");
                             return true;
@@ -125,21 +125,21 @@ public class ReporterExecutor implements CommandExecutor {
                             }
                             return true;
                         }
-                    } else {
-                        sender.sendMessage(ChatColor.RED + "Invalid ID!");
+                    } catch (NullPointerException npe) {
+                        sender.sendMessage(reporter.getLang("lang.invalidId"));
                         return true;
                     }
                 } else {
-                    sender.sendMessage(ChatColor.DARK_RED + "You dont have permission to do that!");
+                    sender.sendMessage(reporter.getLang("lang.noPermission"));
                     return true;
                 }
-                
+
             } else if (args[0].equalsIgnoreCase("reopen")) {
                 if (sender.hasPermission("reporter.reopen")) {
                     if (args.length > 1) {
                         int id = Integer.parseInt(args[1]);
-                        Report r = new Report(reporter, sql, id);
-                        if (!r.isNull()) {
+                        try {
+                            Report r = new Report(reporter, sql, id);
                             if (!r.isResolved()) {
                                 sender.sendMessage(ChatColor.RED + "Report " + id + " is already open!");
                                 return true;
@@ -150,16 +150,15 @@ public class ReporterExecutor implements CommandExecutor {
                                 sender.sendMessage(ChatColor.GOLD + "Done!");
                                 return true;
                             }
-                        } else {
-                            sender.sendMessage(ChatColor.RED + "Invalid ID!");
+                        } catch (NullPointerException npe) {
+                            sender.sendMessage(reporter.getLang("lang.invalidId"));
                             return true;
                         }
                     } else {
-                        sender.sendMessage(ChatColor.RED + "Usage: /reporter reopen (id)");
-                        return true;
+                        return false;
                     }
                 } else {
-                    sender.sendMessage(ChatColor.DARK_RED + "You dont have permission to do that!");
+                    sender.sendMessage(reporter.getLang("lang.noPermission"));
                     return true;
                 }
             } else {

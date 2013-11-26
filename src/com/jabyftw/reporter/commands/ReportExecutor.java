@@ -19,23 +19,22 @@ import org.bukkit.entity.Player;
  * @author Rafael
  */
 public class ReportExecutor implements CommandExecutor {
-    
+
     private final Reporter reporter;
     private final MySQLCon sql;
-    private String Formatting;
     public List<Player> alreadyReport = new ArrayList<Player>();
-    
+
     public ReportExecutor(Reporter plugin, MySQLCon sql) {
         this.reporter = plugin;
         this.sql = sql;
     }
-    
+
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (args.length < 1) { // just /report
             return false;
         } else {
-            
+
             if (args[0].equalsIgnoreCase("help")) {
                 sender.sendMessage(ChatColor.YELLOW + "Report'em all Plugin: Command list");
                 if (sender.hasPermission("reporter.report")) {
@@ -57,37 +56,37 @@ public class ReportExecutor implements CommandExecutor {
                     sender.sendMessage(ChatColor.GOLD + "/reporter close (id) (result)");
                 }
                 return true;
-                
+
             } else if (args[0].equalsIgnoreCase("info")) {
                 if (sender.hasPermission("reporter.report.info")) {
                     if (args.length > 1) {
                         int id = Integer.parseInt(args[1]);
                         reporter.log(1, "ID: " + id + " | Args: " + args[0] + args[1]);
-                        Report r = new Report(reporter, sql, id);
-                        if (r.getSender().equals(sender.getName()) || sender.hasPermission("reporter.report.info.others")) {
-                            if (!r.isNull()) {
-                                sender.sendMessage(ChatColor.GOLD + "Reporter: " + ChatColor.YELLOW + r.getSender() + ChatColor.GRAY + " | " + ChatColor.GOLD + "Reported: " + ChatColor.YELLOW + r.getReported() + ChatColor.GRAY + " | " + ChatColor.GOLD + "Coords: " + ChatColor.YELLOW + r.getX() + ", " + r.getY() + ", " + r.getZ());
-                                sender.sendMessage(ChatColor.GOLD + "Reason: " + ChatColor.YELLOW + r.getReason());
+                        try {
+                            Report r = new Report(reporter, sql, id);
+                            if (r.getSender().equals(sender.getName()) || sender.hasPermission("reporter.report.info.others")) {
+                                sender.sendMessage(reporter.getLang("lang.reporterInfo").replaceAll("%sender", r.getSender()).replaceAll("%reported", r.getReported()).replaceAll("%X", Integer.toString(r.getX())).replaceAll("%Y", Integer.toString(r.getY())).replaceAll("%Z", Integer.toString(r.getZ())));
+                                sender.sendMessage(reporter.getLang("lang.reason").replaceAll("%reason", r.getReason()));
                                 if (r.isResolved()) {
-                                    sender.sendMessage(ChatColor.GOLD + "Resolved: " + ChatColor.YELLOW + "yes" + ChatColor.GRAY + " | " + ChatColor.GOLD + "Result: " + ChatColor.YELLOW + r.getResult() + ChatColor.GRAY + " | " + ChatColor.GOLD + "Resolved by: " + ChatColor.YELLOW + r.getResolver());
+                                    sender.sendMessage(reporter.getLang("lang.resolvedYes").replaceAll("%result", r.getResult()).replaceAll("%owner", r.getResolver()));
                                 } else {
-                                    sender.sendMessage(ChatColor.GOLD + "Resolved: " + ChatColor.DARK_RED + "no");
+                                    sender.sendMessage(reporter.getLang("lang.resolvedNo"));
                                 }
                                 return true;
+
                             } else {
-                                sender.sendMessage(ChatColor.RED + "Invalid ID!");
+                                sender.sendMessage(reporter.getLang("lang.cantSeeOtherPlayerReport"));
                                 return true;
                             }
-                        } else {
-                            sender.sendMessage(ChatColor.RED + "You cant see a report of another player!");
+                        } catch (NullPointerException npe) {
+                            sender.sendMessage(reporter.getLang("lang.invalidId"));
                             return true;
                         }
                     } else {
-                        sender.sendMessage(ChatColor.RED + "Usage: /reporter info (id)");
-                        return true;
+                        return false;
                     }
                 } else {
-                    sender.sendMessage(ChatColor.DARK_RED + "You dont have permission to do that!");
+                    sender.sendMessage(reporter.getLang("lang.noPermission"));
                     return true;
                 }
             } else {
@@ -96,7 +95,7 @@ public class ReportExecutor implements CommandExecutor {
                         Player p = (Player) sender;
                         if (args.length > 1) {
                             if (alreadyReport.contains(p)) {
-                                sender.sendMessage(ChatColor.RED + "You already reported in the past " + ChatColor.DARK_RED + reporter.config.getInt("Config.reportDelayInMinutes") + ChatColor.RED + " minutes!");
+                                sender.sendMessage(reporter.getLang("lang.alreadyReported").replaceAll("%time", reporter.config.getString("Config.reportDelayInMinutes")));
                                 return true;
                             } else {
                                 Location loc = p.getLocation();
@@ -106,26 +105,25 @@ public class ReportExecutor implements CommandExecutor {
                                 reporter.reports.add(r);
                                 alreadyReport.add(p);
                                 reporter.getServer().getScheduler().runTaskLater(reporter, new RemoveFromListTask(this, p), reporter.config.getInt("Config.reportDelayInMinutes") * 20 * 60);
-                                sender.sendMessage(ChatColor.YELLOW + "Report sent! " + ChatColor.GOLD + "Our mods will take care of your issue!");
+                                sender.sendMessage(reporter.getLang("lang.reportSent"));
                                 if (sender.hasPermission("reporter.report.info")) {
-                                    sender.sendMessage(ChatColor.GOLD + "You can watch your report by using " + ChatColor.RED + "/report info " + r.getId());
+                                    sender.sendMessage(reporter.getLang("lang.reportInfo").replaceAll("%id", Integer.toString(r.getId())));
                                 }
                                 if (reporter.notifications != null) {
-                                    Notification notf = new Notification("New report from " + sender.getName() + " @ " + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ(), "Reason: " + reason);
+                                    Notification notf = new Notification("New report from " + sender.getName() + " @ " + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ(), "Reported: " + r.getReported() + " | Reason: " + reason);
                                     reporter.notifications.showNotification(notf);
                                 }
                                 return true;
                             }
                         } else {
-                            p.sendMessage(ChatColor.RED + "Usage: /reporter (name) (reason)");
-                            return true;
+                            return false;
                         }
                     } else {
-                        sender.sendMessage(ChatColor.RED + "This command cant be executed on Console!");
+                        sender.sendMessage(reporter.getLang("lang.onlyIngame"));
                         return true;
                     }
                 } else {
-                    sender.sendMessage(ChatColor.DARK_RED + "You dont have permission to do that!");
+                    sender.sendMessage(reporter.getLang("lang.noPermission"));
                     return true;
                 }
             }
