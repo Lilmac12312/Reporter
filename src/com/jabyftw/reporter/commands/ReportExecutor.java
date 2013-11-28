@@ -109,6 +109,11 @@ public class ReportExecutor implements CommandExecutor {
                                 if (sender.hasPermission("reporter.report.info")) {
                                     sender.sendMessage(reporter.getLang("lang.reportInfo").replaceAll("%id", Integer.toString(r.getId())));
                                 }
+                                for(Player player : reporter.getServer().getOnlinePlayers()) {
+                                    if(player.hasPermission("reporter.report.notify")) {
+                                        player.sendMessage(reporter.getLang("lang.reportNotification").replaceAll("%id", Integer.toString(r.getId())).replaceAll("%sender", r.getSender()));
+                                    }
+                                }
                                 if (reporter.notifications != null) {
                                     Notification notf = new Notification("New report from " + sender.getName() + " @ " + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ(), "Reported: " + r.getReported() + " | Reason: " + reason);
                                     reporter.notifications.showNotification(notf);

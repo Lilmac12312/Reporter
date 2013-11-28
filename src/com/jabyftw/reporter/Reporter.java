@@ -61,6 +61,7 @@ public class Reporter extends JavaPlugin {
         config.addDefault("Config.debug", false);
         config.addDefault("lang.onlyIngame", "&cThis command can just be executed ingame.");
         config.addDefault("lang.noPermission", "&4You dont have permission to do that.");
+        config.addDefault("lang.reportNotification", "&6New report from %sender. &cCheck using &4/reporter info %id");
         config.addDefault("lang.invalidId", "&cInvalid ID!");
         config.addDefault("lang.noResult", "didnt mentioned");
         config.addDefault("lang.reporterInfo", "&6Reporter: &e%sender &7|&6 Reported: &e%reported &7|&6 Coords: &e%X&6, &e%Y&6, &e%Z");

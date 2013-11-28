@@ -1,5 +1,5 @@
 name: Reporter
-version: 1.0
+version: 1.0.1
 author: rfsantos1996
 main: com.jabyftw.reporter.Reporter
 description: Report griefers!
@@ -21,6 +21,9 @@ permissions:
      description: Gives access to a Reporter command
      default: true
    reporter.report.info.others:
+     description: Gives access to a Reporter command
+     default: op
+   reporter.report.notify:
      description: Gives access to a Reporter command
      default: op
    reporter.list:
